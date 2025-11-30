@@ -87,15 +87,13 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                     raise ValueError(msg)
 
                 with open(abs_path, "rb") as audio_file:
-                    api_params = {
+                    log_params = {
                         "model": self.MODEL_NAME,
-                        "file": audio_file,
                         "response_format": "diarized_json",
                         "chunking_strategy": "auto",
                     }
                     # Note: gpt-4o-transcribe-diarize does not support prompt parameter
 
-                    log_params = {k: v for k, v in api_params.items() if k != 'file'}
                     lang_note = " (Language: implicit detection by model)"
                     if progress_callback:
                         progress_callback("Language detection: automatic (implicit by model).", False)
@@ -106,7 +104,12 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
 
                     start_time = time.time()
                     logging.info(f"{log_prefix} Calling OpenAI API...")
-                    transcript_response = self.client.audio.transcriptions.create(**api_params)
+                    transcript_response = self.client.audio.transcriptions.create(
+                        model=self.MODEL_NAME,
+                        file=audio_file,
+                        response_format="diarized_json",
+                        chunking_strategy="auto",
+                    )
                     duration = time.time() - start_time
                     logging.info(f"{log_prefix} OpenAI API call successful. Duration: {duration:.2f}s")
 
@@ -361,19 +364,21 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                     raise ValueError(msg)
 
                 with open(abs_chunk_path, "rb") as audio_file:
-                    api_params = {
+                    log_params = {
                         "model": self.MODEL_NAME,
-                        "file": audio_file,
                         "response_format": "diarized_json",
                         "chunking_strategy": "auto",
                     }
-
-                    log_params = {k: v for k, v in api_params.items() if k != 'file'}
                     logging.info(f"{effective_log_prefix} Attempt {attempt + 1}: Calling API with parameters: {log_params}")
 
                     start_time = time.time()
                     logging.info(f"{effective_log_prefix} Attempt {attempt + 1}: Calling OpenAI API...")
-                    response = self.client.audio.transcriptions.create(**api_params)
+                    response = self.client.audio.transcriptions.create(
+                        model=self.MODEL_NAME,
+                        file=audio_file,
+                        response_format="diarized_json",
+                        chunking_strategy="auto",
+                    )
                     duration = time.time() - start_time
                     logging.info(f"{effective_log_prefix} Attempt {attempt + 1}: API call successful. Duration: {duration:.2f}s")
 
