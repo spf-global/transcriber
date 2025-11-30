@@ -91,6 +91,7 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                         "model": self.MODEL_NAME,
                         "file": audio_file,
                         "response_format": "diarized_json",
+                        "chunking_strategy": "auto",
                     }
                     # Note: gpt-4o-transcribe-diarize does not support prompt parameter
 
@@ -364,6 +365,7 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                         "model": self.MODEL_NAME,
                         "file": audio_file,
                         "response_format": "diarized_json",
+                        "chunking_strategy": "auto",
                     }
 
                     log_params = {k: v for k, v in api_params.items() if k != 'file'}
