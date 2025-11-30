@@ -176,23 +176,35 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
 
         Returns:
             Tuple of (full_text, speaker_segments)
+            full_text is formatted with speaker labels: "Speaker: text"
         """
         speaker_segments = []
         full_text_parts = []
+        current_speaker = None
 
         try:
             # The response should have a 'segments' attribute with diarization info
             if hasattr(response, 'segments') and response.segments:
                 for segment in response.segments:
+                    speaker = getattr(segment, 'speaker', 'Unknown')
+                    text = getattr(segment, 'text', '').strip()
+
                     seg_dict = {
-                        'speaker': getattr(segment, 'speaker', 'Unknown'),
-                        'text': getattr(segment, 'text', '').strip(),
+                        'speaker': speaker,
+                        'text': text,
                         'start': getattr(segment, 'start', 0.0),
                         'end': getattr(segment, 'end', 0.0),
                     }
                     speaker_segments.append(seg_dict)
-                    if seg_dict['text']:
-                        full_text_parts.append(seg_dict['text'])
+
+                    if text:
+                        # Format with speaker name when speaker changes
+                        if speaker != current_speaker:
+                            full_text_parts.append(f"\n{speaker}: {text}")
+                            current_speaker = speaker
+                        else:
+                            # Same speaker continues, just append text
+                            full_text_parts.append(text)
 
                 logging.info(f"{log_prefix} Parsed {len(speaker_segments)} diarized segments.")
             elif hasattr(response, 'text'):
@@ -210,8 +222,37 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
             if hasattr(response, 'text'):
                 full_text_parts.append(response.text)
 
-        full_text = " ".join(full_text_parts)
+        full_text = " ".join(full_text_parts).strip()
         return full_text, speaker_segments
+
+    def _format_segments_as_text(self, segments: List[Dict[str, Any]]) -> str:
+        """
+        Format a list of speaker segments into text with speaker labels.
+
+        Args:
+            segments: List of dicts with 'speaker' and 'text' keys
+
+        Returns:
+            Formatted text with "Speaker: text" format
+        """
+        if not segments:
+            return ""
+
+        text_parts = []
+        current_speaker = None
+
+        for seg in segments:
+            speaker = seg.get('speaker', 'Unknown')
+            text = seg.get('text', '').strip()
+
+            if text:
+                if speaker != current_speaker:
+                    text_parts.append(f"\n{speaker}: {text}")
+                    current_speaker = speaker
+                else:
+                    text_parts.append(text)
+
+        return " ".join(text_parts).strip()
 
     def _split_and_transcribe(self, audio_file_path: str, language_code: str,
                               progress_callback: ProgressCallback = None,
@@ -264,7 +305,8 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
 
                 logging.info(f"{chunk_log_prefix} Transcription successful.")
 
-            full_transcription = " ".join(filter(None, all_texts))
+            # Rebuild full transcription from all segments to ensure consistent speaker formatting
+            full_transcription = self._format_segments_as_text(all_segments)
             final_language_used = 'auto'
 
             unique_speakers = set(seg.get('speaker', 'Unknown') for seg in all_segments)
