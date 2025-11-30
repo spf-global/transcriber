@@ -130,6 +130,15 @@ def get_progress(job_id):
 
         if is_finished and not is_error:
             # If finished successfully, populate the 'result' field
+            # Parse speaker_segments from JSON if present
+            speaker_segments = None
+            if job_data.get('speaker_segments'):
+                try:
+                    speaker_segments = json.loads(job_data['speaker_segments'])
+                except (json.JSONDecodeError, TypeError):
+                    logging.warning(f"[JOB:{short_job_id}] Could not parse speaker_segments from DB.")
+                    speaker_segments = None
+
             response_data['result'] = {
                 'id': job_data['id'],
                 'filename': job_data['filename'],
@@ -137,7 +146,8 @@ def get_progress(job_id):
                 'transcription_text': job_data['transcription_text'],
                 'api_used': job_data['api_used'],
                 'created_at': job_data['created_at'],
-                'status': job_data['status']
+                'status': job_data['status'],
+                'speaker_segments': speaker_segments
             }
             logging.debug(f"[API:/progress] Job {short_job_id} finished successfully, returning result.")
 

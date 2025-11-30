@@ -16,6 +16,7 @@ from app.services import file_service
 from app.services.api_clients.assemblyai import AssemblyAITranscriptionAPI
 from app.services.api_clients.openai_whisper import OpenAITranscriptionAPI
 from app.services.api_clients.openai_gpt4o import OpenAIGPT4oTranscriptionAPI
+from app.services.api_clients.openai_gpt4o_diarize import OpenAIGPT4oDiarizeTranscriptionAPI
 
 # Import specific API errors if available (example for OpenAI)
 from openai import OpenAIError
@@ -63,6 +64,11 @@ def get_transcription_api(api_choice: str) -> Any:
             if not api_key:
                 raise ValueError("OpenAI API key is not configured.")
             return OpenAIGPT4oTranscriptionAPI(api_key)
+        elif api_choice == 'gpt4o-diarize':
+            api_key = current_app.config.get('OPENAI_API_KEY')
+            if not api_key:
+                raise ValueError("OpenAI API key is not configured.")
+            return OpenAIGPT4oDiarizeTranscriptionAPI(api_key)
         else:
             message = f"Invalid API choice specified: {api_choice}"
             logging.error(f"[SYSTEM] {message}") # Log as system error if choice is invalid
@@ -118,7 +124,16 @@ def process_transcription(job_id: str, temp_filename: str, language_code: str,
             # Pass original_filename TO API CLIENTS for their internal logging/progress
             # SIMPLE UI MESSAGE (added before calling transcribe)
             _update_progress(job_id, f"Starting transcription of file: {original_filename}")
-            if api_choice in ('gpt4o', 'whisper'):
+            speaker_segments = None  # Default for non-diarization APIs
+            if api_choice == 'gpt4o-diarize':
+                transcription_text, detected_language, speaker_segments = api.transcribe(
+                    audio_file_path=temp_filename,
+                    language_code=language_code,
+                    progress_callback=progress_callback,
+                    context_prompt=context_prompt,
+                    original_filename=original_filename
+                )
+            elif api_choice in ('gpt4o', 'whisper'):
                 transcription_text, detected_language = api.transcribe(
                     audio_file_path=temp_filename,
                     language_code=language_code,
@@ -148,7 +163,8 @@ def process_transcription(job_id: str, temp_filename: str, language_code: str,
             transcription_model.finalize_job_success(
                 job_id,
                 transcription_text,
-                detected_language
+                detected_language,
+                speaker_segments=speaker_segments
             )
             # Add a final verbose message for UI after DB save - SIMPLE UI MESSAGE
             _update_progress(job_id, f"Finalized job {short_job_id} successfully.")
