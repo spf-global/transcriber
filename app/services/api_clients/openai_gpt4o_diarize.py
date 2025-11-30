@@ -108,7 +108,7 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                         model=self.MODEL_NAME,
                         file=audio_file,
                         response_format="diarized_json",
-                        chunking_strategy="auto",
+                        extra_body={"chunking_strategy": "auto"},
                     )
                     duration = time.time() - start_time
                     logging.info(f"{log_prefix} OpenAI API call successful. Duration: {duration:.2f}s")
@@ -377,7 +377,7 @@ class OpenAIGPT4oDiarizeTranscriptionAPI:
                         model=self.MODEL_NAME,
                         file=audio_file,
                         response_format="diarized_json",
-                        chunking_strategy="auto",
+                        extra_body={"chunking_strategy": "auto"},
                     )
                     duration = time.time() - start_time
                     logging.info(f"{effective_log_prefix} Attempt {attempt + 1}: API call successful. Duration: {duration:.2f}s")
