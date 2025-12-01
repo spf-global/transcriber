@@ -82,10 +82,18 @@ def init_db_command():
                     created_at TEXT NOT NULL,
                     status TEXT DEFAULT 'pending',
                     progress_log TEXT DEFAULT '[]',
-                    error_message TEXT
+                    error_message TEXT,
+                    speaker_segments TEXT DEFAULT NULL
                 )
                 '''
             )
+            # Migration: Add speaker_segments column if it doesn't exist (for existing DBs)
+            try:
+                cursor.execute("ALTER TABLE transcriptions ADD COLUMN speaker_segments TEXT DEFAULT NULL")
+                logging.info("[DB] Added 'speaker_segments' column to existing table.")
+            except sqlite3.OperationalError:
+                # Column already exists, ignore
+                pass
             logging.info("[DB] 'transcriptions' table verified/created.")
             conn.commit()
             conn.close()
@@ -163,22 +171,31 @@ def set_job_error(job_id: str, error_message: str) -> None:
     except sqlite3.Error as e:
         logging.error(f"[DB:JOB:{short_job_id}] Error setting error status: {e}")
 
-def finalize_job_success(job_id: str, transcription_text: str, detected_language: str) -> None:
-    """Finalizes a job as successful and saves the results."""
+def finalize_job_success(job_id: str, transcription_text: str, detected_language: str,
+                         speaker_segments: Optional[list] = None) -> None:
+    """Finalizes a job as successful and saves the results, including speaker segments if available."""
     short_job_id = job_id[:8]
     try:
         db = get_db()
         update_job_progress(job_id, "Transcription successful and saved.")
+
+        # Serialize speaker_segments to JSON if provided
+        speaker_segments_json = None
+        if speaker_segments is not None:
+            speaker_segments_json = json.dumps(speaker_segments)
+            logging.info(f"[DB:JOB:{short_job_id}] Saving {len(speaker_segments)} speaker segments.")
+
         db.execute(
             """
             UPDATE transcriptions
             SET status = 'finished',
                 transcription_text = ?,
                 detected_language = ?,
-                error_message = NULL
+                error_message = NULL,
+                speaker_segments = ?
             WHERE id = ?
             """,
-            (transcription_text, detected_language, job_id)
+            (transcription_text, detected_language, speaker_segments_json, job_id)
         )
         db.commit()
         logging.info(f"[DB:JOB:{short_job_id}] Finalized job successfully.")

@@ -1,7 +1,7 @@
 # Dockerfile
 
 # Use an official Python runtime as base image.
-FROM python:3.9-slim-buster
+FROM python:3.11-slim-bookworm
 
 # Set environment variables for Python
 ENV PYTHONDONTWRITEBYTECODE=1

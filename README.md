@@ -2,19 +2,21 @@
 
 # Transcriber
 
-Transcriber is an audio transcription application with a user-friendly web interface. It allows you to upload audio files and get transcriptions using one of three supported APIs:
+Transcriber is an audio transcription application with a user-friendly web interface. It allows you to upload audio files and get transcriptions using one of four supported APIs:
 
-- **AssemblyAI**  
-- **OpenAI Whisper**  
-- **OpenAI GPT4o Transcribe** (new default)
+- **OpenAI GPT4o Transcribe** (default)
+- **OpenAI GPT4o Transcribe + Diarization** (with speaker identification)
+- **OpenAI Whisper**
+- **AssemblyAI**
 
 The application automatically handles large files by splitting them into manageable chunks.
 
 ## Features
 
 - **User-Friendly Web Interface:** A clean HTML/CSS/JavaScript frontend allows you to upload an audio file, select an API and choose a language.
-- **Multiple Transcription APIs:** Choose from AssemblyAI, OpenAI Whisper or the new OpenAI GPT 4o Transcribe.
-- **Language Selection:** Choose your audio’s language manually or use the automatic language detection for convenience.
+- **Multiple Transcription APIs:** Choose from OpenAI GPT4o Transcribe, GPT4o with Diarization, Whisper, or AssemblyAI.
+- **Speaker Diarization:** The GPT4o Diarize model identifies different speakers in the audio and labels them (e.g., "A: Hello" / "B: Hi there").
+- **Language Selection:** Choose your audio's language manually or use the automatic language detection for convenience.
 - **Context Prompting:** Add context hints for OpenAI APIs to improve transcription of specialized terms (limited to 120 words).
 - **Transcription History:** View, copy, download or delete previously transcribed audio.
 - **Large File Handling:** Audio files larger than 25MB are automatically split into chunks to overcome API limits.
@@ -25,9 +27,13 @@ The application automatically handles large files by splitting them into managea
 ## Usage
 
 1. **Upload Audio File:** Click the "File" button to select an audio file from your computer.
-2. **Select API:** Choose either AssemblyAI or OpenAI Whisper from the dropdown menu.
+2. **Select API:** Choose from the available transcription APIs:
+   - **GPT4o Transcribe:** Fast, accurate transcription
+   - **GPT4o Transcribe + Diarization:** Transcription with speaker identification (outputs "A: text", "B: text", etc.)
+   - **Whisper:** OpenAI's Whisper model
+   - **AssemblyAI:** Alternative transcription service
 3. **Select Language:** Choose the language of your audio or select "Automatic Detection."
-4. **Add Context (Optional):** For OpenAI APIs, enter a context prompt to improve transcription accuracy (limited to 120 words).
+4. **Add Context (Optional):** For OpenAI APIs (except Diarization), enter a context prompt to improve transcription accuracy (limited to 120 words).
 5. **Transcribe:** Click the "Transcribe" button to start the transcription.
 6. **View History:** Your transcriptions will appear in the "Transcription History" section, where you can copy, download or delete them.
 
@@ -49,7 +55,7 @@ The application relies on several environment variables. You can specify these i
 | `TZ`                     | The timezone for the application.                                                                   | Any valid timezone string               | `UTC`     |
 | `ASSEMBLYAI_API_KEY`     | Your API key for AssemblyAI.                                                                          | Your AssemblyAI API key                 | (none)    |
 | `OPENAI_API_KEY`         | Your API key for OpenAI (used for both Whisper and GPT 4o Transcribe).                                | Your OpenAI API key                     | (none)    |
-| `DEFAULT_TRANSCRIBE_API` | The default transcription API used when the application loads. | `assemblyai`, `whisper` or `gpt4o`        | `gpt4o`   |
+| `DEFAULT_TRANSCRIBE_API` | The default transcription API used when the application loads. | `gpt4o`, `gpt4o-diarize`, `whisper`, `assemblyai` | `gpt4o`   |
 | `DEFAULT_LANGUAGE`       | The default language for transcription on startup.                                                  | `auto`, `en`, `nl`, `fr`, `es`            | `auto`    |
 
 ## Installation and Deployment
